@@ -8,12 +8,12 @@ import (
 	"mime/multipart"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 )
 
 func TestTools_RandomString(t *testing.T) {
-	var testTool Tools
 	s := testTool.RandomString(10)
 
 	if len(s) != 10 {
@@ -125,8 +125,7 @@ func TestTools_UploadOneFile(t *testing.T) {
 	request := httptest.NewRequest("POST", "/", pr)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 
-	var testTools Tools
-	uploadFiles, err := testTools.UploadOneFile(request, "./testdata/uploads/", true)
+	uploadFiles, err := testTool.UploadOneFile(request, "./testdata/uploads/", true)
 
 	if err != nil {
 		t.Error(err)
@@ -141,7 +140,6 @@ func TestTools_UploadOneFile(t *testing.T) {
 }
 
 func TestTool_CreateDirIfNotExist(t *testing.T) {
-	var testTool Tools
 	err := testTool.CreateDirIfNotExist("./testdata/myDir")
 
 	if err != nil {
@@ -155,4 +153,30 @@ func TestTool_CreateDirIfNotExist(t *testing.T) {
 	}
 
 	_ = os.Remove("./testdata/myDir")
+}
+
+var slugTests = []struct {
+	name          string
+	s             string
+	expected      string
+	errorExpected bool
+}{
+	{name: "valid string", s: "now is the time", expected: "now-is-the-time", errorExpected: false},
+	{name: "empty string", s: "", expected: "", errorExpected: true},
+	{name: "complex string", s: "Now is the time for all GOOD men!", expected: "now-is-the-time-for-all-good-men", errorExpected: false},
+	{name: "korean string", s: "우 투 더 우투더문", expected: "", errorExpected: true},
+	{name: "korean string and roman characters", s: "우 투 더 우투더문 hello world", expected: "hello-world", errorExpected: false},
+}
+
+func TestTool_Slugify(t *testing.T) {
+	for _, e := range slugTests {
+		slug, err := testTool.Slugify(e.s)
+		if err != nil && !e.errorExpected {
+			t.Errorf("%s: error received when none expected:%s", e.name, err.Error())
+		}
+
+		if !e.errorExpected && !strings.EqualFold(e.expected, slug) {
+			t.Errorf("%s: wrong slug is returned; expected %s; but got %s;", e.name, e.expected, slug)
+		}
+	}
 }
