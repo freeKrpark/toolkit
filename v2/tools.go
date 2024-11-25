@@ -306,7 +306,7 @@ func (t *Tools) PushJSONToRemote(uri string, data any, client ...*http.Client) (
 		return nil, 0, err
 	}
 
-	defer response.Body.Close()
+	// defer response.Body.Close()
 
 	return response, response.StatusCode, nil
 
